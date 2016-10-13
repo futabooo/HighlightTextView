@@ -9,17 +9,26 @@ import android.text.style.BackgroundColorSpan
 import android.util.AttributeSet
 import android.widget.EditText
 
-class HighlightTextView : EditText {
+class HighlightTextView(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) : EditText(context, attrs, defStyleAttr, defStyleRes) {
 
-  val DEFAULT_CHARACTER_LIMIT = 200
-  val DEFAULT_OVER_LIMIT_BACKGROUND_COLOR = Color.RED
+  companion object {
+    @JvmStatic
+    val DEFAULT_CHARACTER_LIMIT = 200
+    @JvmStatic
+    val DEFAULT_OVER_LIMIT_BACKGROUND_COLOR = Color.RED
+  }
 
   var characterLimit = DEFAULT_CHARACTER_LIMIT
   var overLimitBackgroundColor = DEFAULT_OVER_LIMIT_BACKGROUND_COLOR
 
-  @JvmOverloads public constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0)
-  : super(context, attrs, defStyleAttr) {
-    var a = context.obtainStyledAttributes(attrs, R.styleable.HighlightTextView, defStyleAttr, 0)
+  constructor(context: Context): this(context, null)
+
+  constructor(context: Context, attrs: AttributeSet?): this(context, attrs, 0)
+
+  constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int): this(context, attrs, defStyleAttr, 0)
+
+  init {
+    val a = context.obtainStyledAttributes(attrs, R.styleable.HighlightTextView, defStyleAttr, 0)
     characterLimit = a.getInt(R.styleable.HighlightTextView_characterLimit, DEFAULT_CHARACTER_LIMIT)
     overLimitBackgroundColor = a.getInt(R.styleable.HighlightTextView_overLimitBackgroundColor,
         DEFAULT_OVER_LIMIT_BACKGROUND_COLOR)
@@ -28,12 +37,12 @@ class HighlightTextView : EditText {
     watchHighlightText()
   }
 
-  fun setHighlightText(s: CharSequence?) {
-    if (s!!.count() < characterLimit) {
+  fun setHighlightText(s: CharSequence) {
+    if (s.count() < characterLimit) {
       return
     }
 
-    var spannable = Spannable.Factory.getInstance().newSpannable(s)
+    val spannable = Spannable.Factory.getInstance().newSpannable(s)
     spannable.setSpan(BackgroundColorSpan(overLimitBackgroundColor), characterLimit, s.count(),
         Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
     setText(spannable)
@@ -44,14 +53,7 @@ class HighlightTextView : EditText {
     addTextChangedListener(Watcher(this))
   }
 
-  class Watcher : TextWatcher {
-
-    var highlightTextView: HighlightTextView
-
-    constructor(highlightTextView: HighlightTextView) {
-      this.highlightTextView = highlightTextView
-    }
-
+  class Watcher(var highlightTextView: HighlightTextView) : TextWatcher {
 
     override fun afterTextChanged(s: Editable?) {
     }
@@ -61,7 +63,7 @@ class HighlightTextView : EditText {
 
     override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
       highlightTextView.removeTextChangedListener(this)
-      highlightTextView.setHighlightText(s)
+      s?.let { highlightTextView.setHighlightText(it) }
       highlightTextView.addTextChangedListener(this)
     }
 
