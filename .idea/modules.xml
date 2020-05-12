@@ -3,7 +3,10 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/HighlightTextView.iml" filepath="$PROJECT_DIR$/HighlightTextView.iml" />
+      <module fileurl="file://$PROJECT_DIR$/example/HighlightTextView-example.iml" filepath="$PROJECT_DIR$/example/HighlightTextView-example.iml" group="HighlightTextView/example" />
+      <module fileurl="file://$PROJECT_DIR$/library/HighlightTextView-library.iml" filepath="$PROJECT_DIR$/library/HighlightTextView-library.iml" group="HighlightTextView/library" />
       <module fileurl="file://$PROJECT_DIR$/example/example.iml" filepath="$PROJECT_DIR$/example/example.iml" />
+      <module fileurl="file://$PROJECT_DIR$/futabooo-HighlightTextView.iml" filepath="$PROJECT_DIR$/futabooo-HighlightTextView.iml" group="HighlightTextView" />
       <module fileurl="file://$PROJECT_DIR$/library/library.iml" filepath="$PROJECT_DIR$/library/library.iml" />
     </modules>
   </component>

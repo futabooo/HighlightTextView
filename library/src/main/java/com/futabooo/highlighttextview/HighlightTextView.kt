@@ -7,65 +7,61 @@ import android.text.Spannable
 import android.text.TextWatcher
 import android.text.style.BackgroundColorSpan
 import android.util.AttributeSet
-import android.widget.EditText
+import androidx.appcompat.widget.AppCompatEditText
+import androidx.core.content.withStyledAttributes
 
-class HighlightTextView(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) : EditText(context, attrs, defStyleAttr, defStyleRes) {
+class HighlightTextView @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet? = null,
+    defStyleAttr: Int = R.attr.editTextStyle
+) : AppCompatEditText(context, attrs, defStyleAttr) {
 
-  companion object {
-    @JvmStatic
-    val DEFAULT_CHARACTER_LIMIT = 200
-    @JvmStatic
-    val DEFAULT_OVER_LIMIT_BACKGROUND_COLOR = Color.RED
-  }
+    companion object {
+        @JvmStatic
+        val DEFAULT_CHARACTER_LIMIT = 200
 
-  var characterLimit = DEFAULT_CHARACTER_LIMIT
-  var overLimitBackgroundColor = DEFAULT_OVER_LIMIT_BACKGROUND_COLOR
-
-  constructor(context: Context): this(context, null)
-
-  constructor(context: Context, attrs: AttributeSet?): this(context, attrs, 0)
-
-  constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int): this(context, attrs, defStyleAttr, 0)
-
-  init {
-    val a = context.obtainStyledAttributes(attrs, R.styleable.HighlightTextView, defStyleAttr, 0)
-    characterLimit = a.getInt(R.styleable.HighlightTextView_characterLimit, DEFAULT_CHARACTER_LIMIT)
-    overLimitBackgroundColor = a.getInt(R.styleable.HighlightTextView_overLimitBackgroundColor,
-        DEFAULT_OVER_LIMIT_BACKGROUND_COLOR)
-    a.recycle()
-
-    watchHighlightText()
-  }
-
-  fun setHighlightText(s: CharSequence) {
-    if (s.count() < characterLimit) {
-      return
+        @JvmStatic
+        val DEFAULT_OVER_LIMIT_BACKGROUND_COLOR = Color.RED
     }
 
-    val spannable = Spannable.Factory.getInstance().newSpannable(s)
-    spannable.setSpan(BackgroundColorSpan(overLimitBackgroundColor), characterLimit, s.count(),
-        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-    setText(spannable)
-    setSelection(s.count())
-  }
+    var characterLimit = DEFAULT_CHARACTER_LIMIT
+    var overLimitBackgroundColor = DEFAULT_OVER_LIMIT_BACKGROUND_COLOR
 
-  fun watchHighlightText() {
-    addTextChangedListener(Watcher(this))
-  }
-
-  class Watcher(var highlightTextView: HighlightTextView) : TextWatcher {
-
-    override fun afterTextChanged(s: Editable?) {
+    init {
+        context.withStyledAttributes(set = attrs, attrs = R.styleable.HighlightTextView, defStyleAttr = defStyleAttr) {
+            characterLimit = getInt(R.styleable.HighlightTextView_characterLimit, DEFAULT_CHARACTER_LIMIT)
+            overLimitBackgroundColor =
+                getInt(R.styleable.HighlightTextView_overLimitBackgroundColor, DEFAULT_OVER_LIMIT_BACKGROUND_COLOR)
+        }
+        watchHighlightText()
     }
 
-    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+    private fun setHighlightText(s: CharSequence) {
+        if (s.count() < characterLimit) {
+            return
+        }
+
+        val spannable = Spannable.Factory.getInstance().newSpannable(s)
+        spannable.setSpan(
+            BackgroundColorSpan(overLimitBackgroundColor), characterLimit, s.count(),
+            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+        setText(spannable)
+        setSelection(s.count())
     }
 
-    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-      highlightTextView.removeTextChangedListener(this)
-      s?.let { highlightTextView.setHighlightText(it) }
-      highlightTextView.addTextChangedListener(this)
+    private fun watchHighlightText() {
+        addTextChangedListener(Watcher(this))
     }
 
-  }
+    private class Watcher(var highlightTextView: HighlightTextView) : TextWatcher {
+        override fun afterTextChanged(s: Editable?) {}
+        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+            // Prevent onTextChanged when apply backgroundcolor span
+            highlightTextView.removeTextChangedListener(this)
+            s?.let { highlightTextView.setHighlightText(it) }
+            highlightTextView.addTextChangedListener(this)
+        }
+    }
 }
