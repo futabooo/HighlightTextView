@@ -4,11 +4,13 @@ import android.content.Context
 import android.graphics.Color
 import android.text.Editable
 import android.text.Spannable
+import android.text.SpannableString
 import android.text.TextWatcher
 import android.text.style.BackgroundColorSpan
 import android.util.AttributeSet
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.core.content.withStyledAttributes
+import androidx.core.text.getSpans
 
 class HighlightTextView @JvmOverloads constructor(
     context: Context,
@@ -36,32 +38,53 @@ class HighlightTextView @JvmOverloads constructor(
         watchHighlightText()
     }
 
-    private fun setHighlightText(s: CharSequence) {
-        if (s.count() < characterLimit) {
-            return
-        }
+    private fun watchHighlightText() {
+        addTextChangedListener(Watcher(this, characterLimit))
+    }
 
-        val spannable = Spannable.Factory.getInstance().newSpannable(s)
+    private fun applyBgColorSpan(spannable: Spannable) {
+        spannable.removeBgColorSpan()
         spannable.setSpan(
-            BackgroundColorSpan(overLimitBackgroundColor), characterLimit, s.count(),
+            BackgroundColorSpan(overLimitBackgroundColor),
+            characterLimit,
+            spannable.count(),
             Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
         )
-        setText(spannable)
-        setSelection(s.count())
     }
 
-    private fun watchHighlightText() {
-        addTextChangedListener(Watcher(this))
+    private fun Spannable.removeBgColorSpan() {
+        val bgColorSpans = this.getSpans<BackgroundColorSpan>()
+        bgColorSpans.forEach { this.removeSpan(it) }
     }
 
-    private class Watcher(var highlightTextView: HighlightTextView) : TextWatcher {
-        override fun afterTextChanged(s: Editable?) {}
+    private class Watcher(val view: HighlightTextView, val limit: Int) : TextWatcher {
+        override fun afterTextChanged(s: Editable?) {
+            if (s == null || s.isEmpty() || s.length < limit) {
+                return
+            }
+
+            // prevent backspace key in editing text
+            val spannable: Spannable = view.editableText ?: SpannableString(view.text)
+            if (spannable.isEditing()) {
+                return
+            }
+
+            view.applyBgColorSpan(spannable)
+
+            if (spannable !is Editable) {
+                // prevent call back loop when can't get editable
+                view.removeTextChangedListener(this)
+                view.setTextKeepState(spannable)
+                view.addTextChangedListener(this)
+            }
+        }
+
         override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-            // Prevent onTextChanged when apply backgroundcolor span
-            highlightTextView.removeTextChangedListener(this)
-            s?.let { highlightTextView.setHighlightText(it) }
-            highlightTextView.addTextChangedListener(this)
+        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+
+        private fun Spannable.isEditing(): Boolean {
+            val spans = this.getSpans<Any>()
+            return spans.any { this.getSpanFlags(it) and Spannable.SPAN_COMPOSING == Spannable.SPAN_COMPOSING }
         }
     }
 }
